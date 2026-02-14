@@ -10,10 +10,51 @@ class SupplierController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $suppliers = Supplier::orderBy('nama_supplier')->paginate(10);
-        return view('supplier.index', compact('suppliers'));
+        $query = Supplier::query();
+
+        // Search
+        if ($request->filled('q')) {
+            $search = $request->input('q');
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_supplier', 'like', '%' . $search . '%')
+                  ->orWhere('kategori', 'like', '%' . $search . '%')
+                  ->orWhere('email', 'like', '%' . $search . '%')
+                  ->orWhere('kontak', 'like', '%' . $search . '%');
+            });
+        }
+
+        // Filter Category
+        if ($request->filled('category')) {
+            $query->where('kategori', $request->category);
+        }
+
+        // Filter Status
+        if ($request->filled('status')) {
+            $status = $request->status === 'active' ? 1 : 0;
+            $query->where('is_active', $status);
+        }
+
+        // Sorting
+        $sortField = $request->input('sort_by', 'nama_supplier');
+        $sortOrder = $request->input('sort_order', 'asc');
+        $allowedSorts = ['nama_supplier', 'kategori', 'email', 'is_active', 'created_at'];
+
+        if (in_array($sortField, $allowedSorts)) {
+            $query->orderBy($sortField, $sortOrder === 'desc' ? 'desc' : 'asc');
+        } else {
+            $query->orderBy('nama_supplier', 'asc');
+        }
+
+        $suppliers = $query->paginate(10)->withQueryString();
+
+        // KPI Data
+        $totalSuppliers = Supplier::count();
+        $activeSuppliers = Supplier::where('is_active', 1)->count();
+        $inactiveSuppliers = Supplier::where('is_active', 0)->count();
+
+        return view('supplier.index', compact('suppliers', 'totalSuppliers', 'activeSuppliers', 'inactiveSuppliers'));
     }
 
     /**

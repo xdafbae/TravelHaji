@@ -8,6 +8,8 @@ use App\Models\Jamaah;
 use App\Models\Embarkasi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Exports\FinanceReportExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class FinanceController extends Controller
 {
@@ -77,7 +79,7 @@ class FinanceController extends Controller
             'keterangan' => 'required|string|max:255',
             'id_jamaah' => 'nullable|exists:jamaah,id_jamaah',
             'deskripsi' => 'nullable|string',
-            'bukti_transaksi' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048'
+            'bukti_transaksi' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240'
         ]);
 
         if ($request->hasFile('bukti_transaksi')) {
@@ -170,7 +172,7 @@ class FinanceController extends Controller
             'keterangan' => 'required|string|max:255',
             'id_jamaah' => 'nullable|exists:jamaah,id_jamaah',
             'deskripsi' => 'nullable|string',
-            'bukti_transaksi' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048'
+            'bukti_transaksi' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240'
         ]);
 
         if ($request->hasFile('bukti_transaksi')) {
@@ -235,6 +237,88 @@ class FinanceController extends Controller
         $labaRugi = $totalPemasukan - $totalPengeluaran;
 
         return view('finance.report', compact(
+            'startDate', 
+            'endDate', 
+            'pemasukan', 
+            'pengeluaran', 
+            'totalPemasukan', 
+            'totalPengeluaran', 
+            'labaRugi'
+        ));
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $startDate = $request->input('start_date', date('Y-m-01'));
+        $endDate = $request->input('end_date', date('Y-m-t'));
+
+        // Reuse query logic (Refactor to private method if needed)
+        $reportData = DB::table('kas')
+            ->join('kode_akuntansi', 'kas.kode_akuntansi_id', '=', 'kode_akuntansi.id')
+            ->select(
+                'kode_akuntansi.kategori',
+                'kode_akuntansi.kode',
+                'kode_akuntansi.keterangan as nama_akun',
+                DB::raw('SUM(kas.jumlah) as total'),
+                'kas.jenis'
+            )
+            ->whereBetween('kas.tanggal', [$startDate, $endDate])
+            ->whereNull('kas.deleted_at')
+            ->groupBy('kode_akuntansi.kategori', 'kode_akuntansi.kode', 'kode_akuntansi.keterangan', 'kas.jenis')
+            ->orderBy('kode_akuntansi.kode')
+            ->get();
+
+        $pemasukan = $reportData->filter(function ($item) {
+            return strtoupper($item->jenis) === 'DEBET';
+        });
+        
+        $pengeluaran = $reportData->filter(function ($item) {
+            return strtoupper($item->jenis) === 'KREDIT';
+        });
+
+        $totalPemasukan = $pemasukan->sum('total');
+        $totalPengeluaran = $pengeluaran->sum('total');
+        $labaRugi = $totalPemasukan - $totalPengeluaran;
+
+        $data = compact('startDate', 'endDate', 'pemasukan', 'pengeluaran', 'totalPemasukan', 'totalPengeluaran', 'labaRugi');
+
+        return Excel::download(new FinanceReportExport($data), 'Laporan_Keuangan_'.$startDate.'_to_'.$endDate.'.xlsx');
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $startDate = $request->input('start_date', date('Y-m-01'));
+        $endDate = $request->input('end_date', date('Y-m-t'));
+
+        // Reuse query logic
+        $reportData = DB::table('kas')
+            ->join('kode_akuntansi', 'kas.kode_akuntansi_id', '=', 'kode_akuntansi.id')
+            ->select(
+                'kode_akuntansi.kategori',
+                'kode_akuntansi.kode',
+                'kode_akuntansi.keterangan as nama_akun',
+                DB::raw('SUM(kas.jumlah) as total'),
+                'kas.jenis'
+            )
+            ->whereBetween('kas.tanggal', [$startDate, $endDate])
+            ->whereNull('kas.deleted_at')
+            ->groupBy('kode_akuntansi.kategori', 'kode_akuntansi.kode', 'kode_akuntansi.keterangan', 'kas.jenis')
+            ->orderBy('kode_akuntansi.kode')
+            ->get();
+
+        $pemasukan = $reportData->filter(function ($item) {
+            return strtoupper($item->jenis) === 'DEBET';
+        });
+        
+        $pengeluaran = $reportData->filter(function ($item) {
+            return strtoupper($item->jenis) === 'KREDIT';
+        });
+
+        $totalPemasukan = $pemasukan->sum('total');
+        $totalPengeluaran = $pengeluaran->sum('total');
+        $labaRugi = $totalPemasukan - $totalPengeluaran;
+
+        return view('finance.print', compact(
             'startDate', 
             'endDate', 
             'pemasukan', 

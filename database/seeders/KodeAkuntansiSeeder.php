@@ -41,6 +41,6 @@ class KodeAkuntansiSeeder extends Seeder
             ['kode' => '3001', 'kategori' => 'Modal', 'keterangan' => 'Setoran Modal Awal'],
         ];
 
-        DB::table('kode_akuntansi')->insert($data);
+        DB::table('kode_akuntansi')->upsert($data, ['kode'], ['kategori', 'keterangan']);
     }
 }

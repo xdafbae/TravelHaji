@@ -36,6 +36,11 @@ class Jamaah extends Model
         return $this->hasMany(Transaksi::class, 'id_jamaah');
     }
 
+    public function kas()
+    {
+        return $this->hasMany(Kas::class, 'id_jamaah');
+    }
+
     public function barang()
     {
         return $this->hasMany(BarangJamaah::class, 'id_jamaah');

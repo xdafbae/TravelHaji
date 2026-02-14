@@ -40,7 +40,12 @@ class PurchasingSeeder extends Seeder
             ]
         ];
 
-        DB::table('supplier')->insert($suppliers);
+        foreach ($suppliers as $supplier) {
+            DB::table('supplier')->updateOrInsert(
+                ['nama_supplier' => $supplier['nama_supplier']],
+                $supplier
+            );
+        }
 
         // Seed Stok Items
         $items = [
@@ -73,6 +78,6 @@ class PurchasingSeeder extends Seeder
             ],
         ];
 
-        DB::table('stok')->insert($items);
+        DB::table('stok')->upsert($items, ['kode_barang'], ['nama_barang', 'inisial_barang', 'buffer_stok', 'is_tersedia']);
     }
 }

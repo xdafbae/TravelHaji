@@ -14,10 +14,63 @@ class PurchasingController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $purchases = Purchase::with('supplier')->orderBy('created_at', 'desc')->paginate(10);
-        return view('purchasing.index', compact('purchases'));
+        $query = Purchase::with('supplier');
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('kode_purchase', 'like', "%{$search}%")
+                  ->orWhereHas('supplier', function($q) use ($search) {
+                      $q->where('nama_supplier', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Filter Status
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
+
+        // Filter Supplier
+        if ($request->filled('supplier_id')) {
+            $query->where('id_supplier', $request->supplier_id);
+        }
+
+        // Filter Date Range
+        if ($request->filled('date_from')) {
+            $query->whereDate('waktu_preorder', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('waktu_preorder', '<=', $request->date_to);
+        }
+
+        // Sorting
+        $sortField = $request->input('sort', 'created_at');
+        $sortDirection = $request->input('direction', 'desc');
+        
+        // Allow sorting by specific columns
+        $allowedSorts = ['kode_purchase', 'waktu_preorder', 'total_amount', 'status', 'created_at'];
+        if (in_array($sortField, $allowedSorts)) {
+            $query->orderBy($sortField, $sortDirection);
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
+        $purchases = $query->paginate(10)->withQueryString();
+
+        // KPIs (Summary Stats)
+        $totalPO = Purchase::count();
+        $totalAmount = Purchase::sum('total_amount');
+        $outstandingPO = Purchase::where('status', '!=', 'Lunas')->count();
+        $todayPO = Purchase::whereDate('created_at', now())->count();
+
+        // Suppliers for filter
+        $suppliers = Supplier::where('is_active', true)->orderBy('nama_supplier')->get();
+
+        return view('purchasing.index', compact('purchases', 'totalPO', 'totalAmount', 'outstandingPO', 'todayPO', 'suppliers'));
     }
 
     /**
@@ -26,7 +79,8 @@ class PurchasingController extends Controller
     public function create()
     {
         $suppliers = Supplier::where('is_active', true)->orderBy('nama_supplier')->get();
-        return view('purchasing.create', compact('suppliers'));
+        $items = Stok::where('is_tersedia', true)->orderBy('nama_barang')->get();
+        return view('purchasing.create', compact('suppliers', 'items'));
     }
 
     /**
@@ -38,6 +92,10 @@ class PurchasingController extends Controller
             'id_supplier' => 'required|exists:supplier,id_supplier',
             'waktu_preorder' => 'required|date',
             'keterangan' => 'nullable|string',
+            'items' => 'nullable|array',
+            'items.*.id_stok' => 'required|exists:stok,id_stok',
+            'items.*.qty' => 'required|integer|min:1',
+            'items.*.harga_satuan' => 'required|numeric|min:0',
         ]);
 
         // Generate Code
@@ -49,16 +107,55 @@ class PurchasingController extends Controller
         }
         $code = 'PO-' . str_pad($newNumber, 5, '0', STR_PAD_LEFT);
 
-        $purchase = Purchase::create([
-            'kode_purchase' => $code,
-            'id_supplier' => $validated['id_supplier'],
-            'waktu_preorder' => $validated['waktu_preorder'],
-            'keterangan' => $validated['keterangan'],
-            'status' => 'Data Masih Kosong',
-            'total_amount' => 0
-        ]);
+        DB::transaction(function () use ($validated, $code, &$purchase) {
+            $purchase = Purchase::create([
+                'kode_purchase' => $code,
+                'id_supplier' => $validated['id_supplier'],
+                'waktu_preorder' => $validated['waktu_preorder'],
+                'keterangan' => $validated['keterangan'],
+                'status' => 'Data Masih Kosong',
+                'total_amount' => 0
+            ]);
 
-        return redirect()->route('purchasing.show', $purchase->id_purchase)->with('success', 'Purchase Order berhasil dibuat.');
+            $totalAmount = 0;
+            if (!empty($validated['items'])) {
+                foreach ($validated['items'] as $item) {
+                    $subtotal = $item['qty'] * $item['harga_satuan'];
+                    PurchaseDetail::create([
+                        'id_purchase' => $purchase->id_purchase,
+                        'id_stok' => $item['id_stok'],
+                        'qty' => $item['qty'],
+                        'harga_satuan' => $item['harga_satuan'],
+                        'subtotal' => $subtotal,
+                        'total_bayar' => $subtotal
+                    ]);
+                    $totalAmount += $subtotal;
+                }
+                
+                $purchase->update([
+                    'total_amount' => $totalAmount,
+                    'status' => $totalAmount > 0 ? 'Ada Data' : 'Data Masih Kosong'
+                ]);
+            }
+        });
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Purchase Order berhasil dibuat.',
+                'data' => [
+                    'id' => $purchase->id_purchase,
+                    'code' => $purchase->kode_purchase,
+                    'redirect_url' => route('purchasing.index')
+                ]
+            ]);
+        }
+
+        return redirect()->route('purchasing.index')->with([
+            'success' => 'Purchase Order berhasil dibuat.',
+            'created_po_id' => $purchase->id_purchase,
+            'created_po_code' => $purchase->kode_purchase
+        ]);
     }
 
     /**
@@ -77,9 +174,10 @@ class PurchasingController extends Controller
      */
     public function edit(string $id)
     {
-        $purchase = Purchase::findOrFail($id);
+        $purchase = Purchase::with('details')->findOrFail($id);
         $suppliers = Supplier::where('is_active', true)->orderBy('nama_supplier')->get();
-        return view('purchasing.edit', compact('purchase', 'suppliers'));
+        $items = Stok::where('is_tersedia', true)->orderBy('nama_barang')->get();
+        return view('purchasing.edit', compact('purchase', 'suppliers', 'items'));
     }
 
     /**

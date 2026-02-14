@@ -10,10 +10,51 @@ class InventoryController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $items = Stok::orderBy('nama_barang')->paginate(10);
-        return view('inventory.index', compact('items'));
+        $query = Stok::query();
+
+        // Search
+        if ($request->filled('q')) {
+            $search = $request->input('q');
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_barang', 'like', '%' . $search . '%')
+                  ->orWhere('kode_barang', 'like', '%' . $search . '%')
+                  ->orWhere('inisial_barang', 'like', '%' . $search . '%');
+            });
+        }
+
+        // Filter Status
+        if ($request->filled('status')) {
+            $status = $request->status === 'active' ? 1 : 0;
+            $query->where('is_tersedia', $status);
+        }
+
+        // Filter Low Stock
+        if ($request->filled('low_stock') && $request->low_stock == '1') {
+            $query->whereColumn('stok_tersedia', '<=', 'buffer_stok');
+        }
+
+        // Sorting
+        $sortField = $request->input('sort_by', 'nama_barang');
+        $sortOrder = $request->input('sort_order', 'asc');
+        $allowedSorts = ['nama_barang', 'kode_barang', 'stok_tersedia', 'buffer_stok', 'is_tersedia'];
+
+        if (in_array($sortField, $allowedSorts)) {
+            $query->orderBy($sortField, $sortOrder === 'desc' ? 'desc' : 'asc');
+        } else {
+            $query->orderBy('nama_barang', 'asc');
+        }
+
+        $items = $query->paginate(10)->withQueryString();
+
+        // KPI Data
+        $totalItems = Stok::count();
+        $lowStockItems = Stok::whereColumn('stok_tersedia', '<=', 'buffer_stok')->count();
+        $activeItems = Stok::where('is_tersedia', 1)->count();
+        $inactiveItems = Stok::where('is_tersedia', 0)->count();
+
+        return view('inventory.index', compact('items', 'totalItems', 'lowStockItems', 'activeItems', 'inactiveItems'));
     }
 
     /**
