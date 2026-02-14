@@ -18,10 +18,35 @@ class EmbarkasiController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $embarkasi = Embarkasi::with('tourLeader')->orderBy('waktu_keberangkatan', 'desc')->paginate(10);
-        return view('embarkasi.index', compact('embarkasi'));
+        $query = Embarkasi::with('tourLeader')->orderBy('waktu_keberangkatan', 'desc');
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('kode_embarkasi', 'like', "%{$search}%")
+                  ->orWhere('paket_haji_umroh', 'like', "%{$search}%")
+                  ->orWhere('kota_keberangkatan', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter Status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $embarkasi = $query->paginate(10)->withQueryString();
+
+        // Quick Stats
+        $totalJadwal = Embarkasi::count();
+        $totalJamaahTerdaftar = Embarkasi::sum('jumlah_jamaah');
+        $jadwalBulanIni = Embarkasi::whereMonth('waktu_keberangkatan', now()->month)
+                                    ->whereYear('waktu_keberangkatan', now()->year)
+                                    ->count();
+
+        return view('embarkasi.index', compact('embarkasi', 'totalJadwal', 'totalJamaahTerdaftar', 'jadwalBulanIni'));
     }
 
     /**

@@ -6,15 +6,54 @@ use App\Models\Jamaah;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Exports\JamaahExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class JamaahController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $jamaah = Jamaah::with(['embarkasi' => function($q) {
+        // Statistics
+        $stats = [
+            'total' => Jamaah::count(),
+            'sudah_berangkat' => Jamaah::where('status_keberangkatan', 'Sudah Berangkat')->count(),
+            'belum_berangkat' => Jamaah::where('status_keberangkatan', 'Belum Berangkat')->count(),
+        ];
+
+        // Query with filters
+        $query = Jamaah::with(['embarkasi' => function($q) {
             $q->orderBy('waktu_keberangkatan', 'desc');
-        }])->latest()->paginate(10);
-        return view('jamaah.index', compact('jamaah'));
+        }])
+        ->withSum(['kas as total_bayar' => function($q) {
+            $q->where('jenis', 'DEBET')
+              ->whereHas('kodeAkuntansi', function($ka) {
+                  $ka->where('kode', 'like', '4%');
+              });
+        }], 'jumlah');
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nama_lengkap', 'like', "%{$search}%")
+                  ->orWhere('kode_jamaah', 'like', "%{$search}%")
+                  ->orWhere('no_hp', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter Status
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status_keberangkatan', $request->status);
+        }
+
+        $jamaah = $query->latest()->paginate(10);
+        
+        return view('jamaah.index', compact('jamaah', 'stats'));
+    }
+
+    public function export(Request $request)
+    {
+        return Excel::download(new JamaahExport($request), 'data_jamaah_' . date('Y-m-d_H-i-s') . '.xlsx');
     }
 
     public function create()
@@ -33,9 +72,11 @@ class JamaahController extends Controller
             'no_hp' => 'nullable|string|max:20',
             'alamat' => 'nullable|string',
             'kabupaten' => 'nullable|string|max:100',
-            'foto_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'foto_kk' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'foto_diri' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'foto_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:10240',
+            'foto_kk' => 'nullable|image|mimes:jpeg,png,jpg|max:10240',
+            'foto_diri' => 'nullable|image|mimes:jpeg,png,jpg|max:10240',
+            'bank_pembayaran' => 'nullable|string|max:100',
+            'nama_agen' => 'nullable|string|max:100',
         ]);
 
         // Auto-generate Kode Jamaah (J001, J002, etc.)
@@ -68,6 +109,12 @@ class JamaahController extends Controller
         return redirect()->route('jamaah.index')->with('success', 'Data Jamaah berhasil disimpan.');
     }
 
+    public function show(Jamaah $jamaah)
+    {
+        $jamaah->load(['embarkasi', 'kas', 'transaksi']);
+        return view('jamaah.show', compact('jamaah'));
+    }
+
     public function edit(Jamaah $jamaah)
     {
         return view('jamaah.edit', compact('jamaah'));
@@ -84,9 +131,11 @@ class JamaahController extends Controller
             'no_hp' => 'nullable|string|max:20',
             'alamat' => 'nullable|string',
             'kabupaten' => 'nullable|string|max:100',
-            'foto_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'foto_kk' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'foto_diri' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'foto_ktp' => 'nullable|image|mimes:jpeg,png,jpg|max:10240',
+            'foto_kk' => 'nullable|image|mimes:jpeg,png,jpg|max:10240',
+            'foto_diri' => 'nullable|image|mimes:jpeg,png,jpg|max:10240',
+            'bank_pembayaran' => 'nullable|string|max:100',
+            'nama_agen' => 'nullable|string|max:100',
         ]);
 
         // Handle File Uploads

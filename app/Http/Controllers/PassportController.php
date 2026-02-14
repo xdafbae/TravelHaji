@@ -12,10 +12,40 @@ class PassportController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $passports = Passport::with('jamaah')->latest()->paginate(10);
-        return view('passport.index', compact('passports'));
+        $query = Passport::with('jamaah');
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nama_passport', 'like', "%{$search}%")
+                  ->orWhere('no_passport', 'like', "%{$search}%")
+                  ->orWhereHas('jamaah', function($q2) use ($search) {
+                      $q2->where('nama_lengkap', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Filter Status Visa
+        if ($request->filled('status')) {
+            $query->where('status_visa', $request->status);
+        }
+
+        $passports = $query->latest()->paginate(10)->withQueryString();
+
+        // Statistics for Dashboard
+        $stats = [
+            'total' => Passport::count(),
+            'pending' => Passport::where('status_visa', 'Pending')->count(),
+            'expired_soon' => Passport::where('date_expire', '<', now()->addMonths(6))
+                                    ->where('date_expire', '>', now())
+                                    ->count(),
+            'approved' => Passport::where('status_visa', 'Approved')->count(),
+        ];
+
+        return view('passport.index', compact('passports', 'stats'));
     }
 
     /**
@@ -54,7 +84,7 @@ class PassportController extends Controller
             'date_issued' => 'required|date',
             'date_expire' => 'required|date|after:date_issued',
             'issuing_office' => 'required|string',
-            'scan_passport' => 'nullable|image|mimes:jpeg,png,jpg,pdf|max:2048',
+            'scan_passport' => 'nullable|image|mimes:jpeg,png,jpg,pdf|max:10240',
         ]);
 
         if ($request->hasFile('scan_passport')) {
@@ -105,7 +135,7 @@ class PassportController extends Controller
             'date_issued' => 'required|date',
             'date_expire' => 'required|date|after:date_issued',
             'issuing_office' => 'required|string',
-            'scan_passport' => 'nullable|image|mimes:jpeg,png,jpg,pdf|max:2048',
+            'scan_passport' => 'nullable|image|mimes:jpeg,png,jpg,pdf|max:10240',
             'status_visa' => 'required|in:Pending,Approved,Issued,Rejected',
         ]);
 

@@ -1,145 +1,215 @@
 <x-app-layout>
     <x-slot name="header">
-        Detail Purchase Order: {{ $purchase->kode_purchase }}
+        <div class="flex flex-col md:flex-row justify-between items-center">
+            <div>
+                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                    {{ __('Detail Purchase Order') }}
+                </h2>
+                <p class="text-sm text-gray-500 mt-1">Ref: <span class="font-mono font-bold text-blue-600">{{ $purchase->kode_purchase }}</span></p>
+            </div>
+            <div class="mt-4 md:mt-0 flex space-x-2">
+                <button onclick="window.print()" class="inline-flex items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    <i class="fas fa-print mr-2"></i> Print / PDF
+                </button>
+                <a href="{{ route('purchasing.edit', $purchase->id_purchase) }}" class="inline-flex items-center px-4 py-2 bg-yellow-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    <i class="fas fa-edit mr-2"></i> Edit
+                </a>
+            </div>
+        </div>
     </x-slot>
 
-    <!-- Success Message -->
+    <!-- Success Message (SweetAlert Integration Check) -->
     @if(session('success'))
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mb-4">
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
-                <span class="block sm:inline">{{ session('success') }}</span>
-            </div>
-        </div>
+        <div class="hidden" id="flash-success-message">{{ session('success') }}</div>
     @endif
 
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="py-6 max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6 print:p-0 print:m-0 print:max-w-none">
         
-        <!-- Header Info -->
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6 bg-white border-b border-gray-200">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h3 class="text-lg font-bold text-gray-800">{{ $purchase->supplier->nama_supplier }}</h3>
-                        <p class="text-sm text-gray-500">{{ $purchase->supplier->alamat }}</p>
-                        <p class="text-sm text-gray-500 mt-1"><i class="fas fa-phone mr-1"></i> {{ $purchase->supplier->kontak }}</p>
-                    </div>
-                    <div class="text-right">
-                        <span class="block text-xs text-gray-500 uppercase tracking-wide">Status PO</span>
-                        <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold {{ $purchase->status == 'Lunas' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800' }} mt-1">
+        <!-- Main Content -->
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 print:shadow-none print:border-0">
+            
+            <!-- Header Status Section -->
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center print:bg-white print:border-b-2">
+                <div>
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Status Pesanan</span>
+                    <div class="mt-1">
+                        @php
+                            $statusClass = match($purchase->status) {
+                                'Lunas' => 'bg-green-100 text-green-800 border-green-200',
+                                'Ada Data' => 'bg-blue-100 text-blue-800 border-blue-200',
+                                default => 'bg-gray-100 text-gray-800 border-gray-200'
+                            };
+                        @endphp
+                        <span class="{{ $statusClass }} px-3 py-1 rounded-full text-sm font-semibold border">
                             {{ $purchase->status }}
                         </span>
-                        <p class="text-sm text-gray-600 mt-2">Tanggal: <strong>{{ date('d M Y', strtotime($purchase->waktu_preorder)) }}</strong></p>
                     </div>
                 </div>
-                
-                @if($purchase->keterangan)
-                <div class="mt-4 p-3 bg-gray-50 rounded text-sm text-gray-600 italic border-l-4 border-gray-300">
-                    "{{ $purchase->keterangan }}"
-                </div>
-                @endif
-                
-                <div class="mt-4 flex space-x-2">
-                    <a href="{{ route('purchasing.edit', $purchase->id_purchase) }}" class="text-sm text-blue-600 hover:underline">Edit Header</a>
-                    <span class="text-gray-300">|</span>
-                    <a href="{{ route('purchasing.index') }}" class="text-sm text-gray-600 hover:underline">Kembali ke List</a>
+                <div class="text-right">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Tanggal PO</span>
+                    <div class="mt-1 font-medium text-gray-900">
+                        {{ date('d F Y', strtotime($purchase->waktu_preorder)) }}
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Items Section -->
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6 bg-white border-b border-gray-200">
-                <h4 class="text-lg font-semibold text-gray-800 mb-4">Daftar Item Barang</h4>
+            <div class="p-8 print:p-0 print:mt-4">
+                <!-- Info Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <!-- Supplier Info -->
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 border-b pb-1">Supplier</h3>
+                        <div class="text-gray-900">
+                            <p class="font-bold text-lg">{{ $purchase->supplier->nama_supplier }}</p>
+                            <p class="text-sm text-gray-600 mt-1">{{ $purchase->supplier->alamat ?? 'Alamat tidak tersedia' }}</p>
+                            <p class="text-sm text-gray-600 mt-1"><i class="fas fa-phone-alt mr-2 text-gray-400"></i> {{ $purchase->supplier->kontak ?? '-' }}</p>
+                            <p class="text-sm text-gray-600"><i class="fas fa-envelope mr-2 text-gray-400"></i> {{ $purchase->supplier->email ?? '-' }}</p>
+                        </div>
+                    </div>
 
-                <!-- Add Item Form -->
-                @if($purchase->status != 'Lunas')
-                <div class="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-200">
-                    <form action="{{ route('purchasing.add-item', $purchase->id_purchase) }}" method="POST" class="flex flex-col md:flex-row items-end gap-4">
-                        @csrf
-                        <div class="flex-1 w-full">
-                            <x-input-label for="id_stok" :value="__('Pilih Barang')" />
-                            <select id="id_stok" name="id_stok" class="border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 rounded-md shadow-sm block mt-1 w-full" required>
-                                <option value="">-- Pilih Barang --</option>
-                                @foreach($items as $item)
-                                    <option value="{{ $item->id_stok }}">{{ $item->kode_barang }} - {{ $item->nama_barang }}</option>
-                                @endforeach
-                            </select>
+                    <!-- Company/Internal Info (Mockup) -->
+                    <div class="md:text-right">
+                        <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 border-b pb-1">Dikirim Ke</h3>
+                        <div class="text-gray-900">
+                            <p class="font-bold text-lg">TravelH Warehouse</p>
+                            <p class="text-sm text-gray-600 mt-1">Jl. Contoh No. 123</p>
+                            <p class="text-sm text-gray-600 mt-1">Jakarta, Indonesia</p>
+                            
+                            @if($purchase->tgl_barang_datang)
+                            <div class="mt-4 inline-block bg-yellow-50 px-3 py-2 rounded border border-yellow-200 text-left">
+                                <p class="text-xs text-yellow-800 font-bold uppercase">Estimasi Kedatangan</p>
+                                <p class="text-sm text-yellow-900">{{ date('d M Y', strtotime($purchase->tgl_barang_datang)) }}</p>
+                            </div>
+                            @endif
                         </div>
-                        <div class="w-full md:w-32">
-                            <x-input-label for="qty" :value="__('Qty')" />
-                            <x-text-input id="qty" class="block mt-1 w-full" type="number" name="qty" min="1" value="1" required />
-                        </div>
-                        <div class="w-full md:w-48">
-                            <x-input-label for="harga_satuan" :value="__('Harga Satuan (Rp)')" />
-                            <x-text-input id="harga_satuan" class="block mt-1 w-full" type="number" name="harga_satuan" min="0" required placeholder="0" />
-                        </div>
-                        <div class="w-full md:w-auto">
-                            <x-primary-button class="bg-emerald-600 hover:bg-emerald-700 w-full md:w-auto justify-center">
-                                <i class="fas fa-plus mr-2"></i> Tambah
-                            </x-primary-button>
-                        </div>
-                    </form>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                @if($purchase->keterangan)
+                <div class="mb-8 p-4 bg-gray-50 rounded-lg border border-gray-100 print:bg-transparent print:border print:border-gray-300">
+                    <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Catatan / Keterangan</h4>
+                    <p class="text-sm text-gray-700 italic">"{{ $purchase->keterangan }}"</p>
                 </div>
                 @endif
 
                 <!-- Items Table -->
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-gray-50 text-gray-600 uppercase text-xs leading-normal">
-                                <th class="py-3 px-6">No</th>
-                                <th class="py-3 px-6">Kode Barang</th>
-                                <th class="py-3 px-6">Nama Barang</th>
-                                <th class="py-3 px-6 text-right">Qty</th>
-                                <th class="py-3 px-6 text-right">Harga Satuan</th>
-                                <th class="py-3 px-6 text-right">Subtotal</th>
-                                @if($purchase->status != 'Lunas')
-                                <th class="py-3 px-6 text-center">Aksi</th>
-                                @endif
-                            </tr>
-                        </thead>
-                        <tbody class="text-gray-600 text-sm font-light">
-                            @forelse($purchase->details as $index => $detail)
-                            <tr class="border-b border-gray-200 hover:bg-gray-100">
-                                <td class="py-3 px-6">{{ $index + 1 }}</td>
-                                <td class="py-3 px-6 font-mono">{{ $detail->stok->kode_barang }}</td>
-                                <td class="py-3 px-6">{{ $detail->stok->nama_barang }}</td>
-                                <td class="py-3 px-6 text-right font-medium">{{ number_format($detail->qty, 0, ',', '.') }}</td>
-                                <td class="py-3 px-6 text-right">Rp {{ number_format($detail->harga_satuan, 0, ',', '.') }}</td>
-                                <td class="py-3 px-6 text-right font-bold text-gray-800">Rp {{ number_format($detail->subtotal, 0, ',', '.') }}</td>
-                                @if($purchase->status != 'Lunas')
-                                <td class="py-3 px-6 text-center">
-                                    <form action="{{ route('purchasing.remove-item', ['id' => $purchase->id_purchase, 'detailId' => $detail->id]) }}" method="POST" onsubmit="return confirm('Hapus item ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-500 hover:text-red-700 transition-colors">
-                                            <i class="fas fa-times-circle"></i>
-                                        </button>
-                                    </form>
-                                </td>
-                                @endif
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="{{ $purchase->status != 'Lunas' ? 7 : 6 }}" class="py-8 text-center text-gray-500 italic">
-                                    Belum ada item dalam PO ini.
-                                </td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                        <tfoot class="bg-gray-100 font-bold text-gray-800">
-                            <tr>
-                                <td colspan="5" class="py-4 px-6 text-right text-lg">Total Purchase Order</td>
-                                <td class="py-4 px-6 text-right text-lg text-emerald-700">Rp {{ number_format($purchase->total_amount, 0, ',', '.') }}</td>
-                                @if($purchase->status != 'Lunas')
-                                <td></td>
-                                @endif
-                            </tr>
-                        </tfoot>
-                    </table>
+                <div class="mb-8">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Detail Item</h3>
+                    <div class="overflow-hidden border border-gray-200 rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50 print:bg-gray-100">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-12">No</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Barang</th>
+                                    <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Qty</th>
+                                    <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Harga Satuan</th>
+                                    <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @forelse($purchase->details as $index => $detail)
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{{ $index + 1 }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900">{{ $detail->stok->nama_barang }}</div>
+                                        <div class="text-xs text-gray-500 font-mono">{{ $detail->stok->kode_barang }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{{ number_format($detail->qty) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{{ \App\Helpers\CurrencyHelper::formatRupiah($detail->harga_satuan) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800 text-right">{{ \App\Helpers\CurrencyHelper::formatRupiah($detail->subtotal) }}</td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="5" class="px-6 py-10 text-center text-gray-500 italic">Tidak ada item dalam PO ini.</td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                            <tfoot class="bg-gray-50 print:bg-gray-100">
+                                <tr>
+                                    <td colspan="4" class="px-6 py-4 text-right text-sm font-bold text-gray-600 uppercase">Total Amount</td>
+                                    <td class="px-6 py-4 text-right text-lg font-bold text-emerald-600">{{ \App\Helpers\CurrencyHelper::formatRupiah($purchase->total_amount) }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Approval / Actions Section (Non-Print) -->
+                <div class="print:hidden border-t border-gray-200 pt-6 mt-6">
+                    <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Actions</h4>
+                    <div class="flex flex-wrap gap-3">
+                        @if($purchase->status != 'Lunas')
+                            <form action="{{ route('purchasing.update', $purchase->id_purchase) }}" method="POST" onsubmit="return confirm('Tandai sebagai Lunas? Stok akan bertambah otomatis.')">
+                                @csrf
+                                @method('PUT')
+                                <input type="hidden" name="id_supplier" value="{{ $purchase->id_supplier }}">
+                                <input type="hidden" name="waktu_preorder" value="{{ $purchase->waktu_preorder }}">
+                                <input type="hidden" name="status" value="Lunas">
+                                <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none transition ease-in-out duration-150">
+                                    <i class="fas fa-check-circle mr-2"></i> Approve / Mark as Paid
+                                </button>
+                            </form>
+                        @else
+                            <button disabled class="inline-flex items-center px-4 py-2 bg-gray-300 border border-transparent rounded-md font-semibold text-xs text-gray-500 uppercase tracking-widest cursor-not-allowed">
+                                <i class="fas fa-check-double mr-2"></i> Sudah Lunas
+                            </button>
+                        @endif
+
+                        <form action="{{ route('purchasing.destroy', $purchase->id_purchase) }}" method="POST" onsubmit="return confirm('Hapus PO ini permanen?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none transition ease-in-out duration-150">
+                                <i class="fas fa-trash-alt mr-2"></i> Delete PO
+                            </button>
+                        </form>
+                    </div>
                 </div>
 
             </div>
         </div>
     </div>
+    
+    <!-- SweetAlert2 Script -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const successMsg = document.getElementById('flash-success-message');
+            if (successMsg) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: successMsg.innerText,
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            }
+        });
+    </script>
+    
+    <style>
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .py-6 {
+                padding: 0 !important;
+            }
+            .max-w-7xl {
+                max-width: none !important;
+            }
+            .print\:p-0, .print\:p-0 * {
+                visibility: visible;
+            }
+            .print\:p-0 {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .print\:hidden {
+                display: none !important;
+            }
+        }
+    </style>
 </x-app-layout>

@@ -1,81 +1,97 @@
 <x-app-layout>
     <x-slot name="header">
-        Tambah Supplier Baru
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Tambah Supplier Baru') }}
+        </h2>
     </x-slot>
 
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6 bg-white border-b border-gray-200">
-                <form action="{{ route('supplier.store') }}" method="POST">
-                    @csrf
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-8 bg-white border-b border-gray-200">
+                    <form action="{{ route('supplier.store') }}" method="POST" x-data="{ submitting: false }" @submit="submitting = true">
+                        @csrf
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Nama Supplier -->
-                        <div class="md:col-span-2">
-                            <x-input-label for="nama_supplier" :value="__('Nama Supplier / Perusahaan')" />
-                            <x-text-input id="nama_supplier" class="block mt-1 w-full" type="text" name="nama_supplier" :value="old('nama_supplier')" required autofocus />
-                            <x-input-error :messages="$errors->get('nama_supplier')" class="mt-2" />
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <!-- Left Column -->
+                            <div class="space-y-6">
+                                <!-- Nama Supplier -->
+                                <div>
+                                    <x-input-label for="nama_supplier" :value="__('Nama Supplier / Perusahaan')" />
+                                    <x-text-input id="nama_supplier" class="block mt-1 w-full" type="text" name="nama_supplier" :value="old('nama_supplier')" required autofocus placeholder="Contoh: PT. Amanah Sejahtera" />
+                                    <x-input-error :messages="$errors->get('nama_supplier')" class="mt-2" />
+                                </div>
+
+                                <!-- Kategori -->
+                                <div>
+                                    <x-input-label for="kategori" :value="__('Kategori Supplier')" />
+                                    <select id="kategori" name="kategori" class="border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 rounded-md shadow-sm block mt-1 w-full">
+                                        <option value="">-- Pilih Kategori --</option>
+                                        @foreach(['Perlengkapan', 'Koper & Tas', 'Akomodasi', 'Transportasi', 'Catering', 'Lainnya'] as $cat)
+                                            <option value="{{ $cat }}" {{ old('kategori') == $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                                        @endforeach
+                                    </select>
+                                    <x-input-error :messages="$errors->get('kategori')" class="mt-2" />
+                                </div>
+
+                                <!-- Status Aktif -->
+                                <div class="flex items-center pt-2">
+                                    <input id="is_active" type="checkbox" name="is_active" value="1" class="w-5 h-5 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500" {{ old('is_active', true) ? 'checked' : '' }}>
+                                    <div class="ml-3 text-sm">
+                                        <label for="is_active" class="font-medium text-gray-700">Supplier Aktif</label>
+                                        <p class="text-gray-500">Supplier aktif dapat dipilih dalam transaksi pembelian.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Column -->
+                            <div class="space-y-6">
+                                <!-- Kontak -->
+                                <div>
+                                    <x-input-label for="kontak" :value="__('No. Telepon / HP')" />
+                                    <x-text-input id="kontak" class="block mt-1 w-full" type="text" name="kontak" :value="old('kontak')" placeholder="Contoh: 08123456789" />
+                                    <x-input-error :messages="$errors->get('kontak')" class="mt-2" />
+                                </div>
+
+                                <!-- Email -->
+                                <div>
+                                    <x-input-label for="email" :value="__('Email (Opsional)')" />
+                                    <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" placeholder="nama@perusahaan.com" />
+                                    <x-input-error :messages="$errors->get('email')" class="mt-2" />
+                                </div>
+                            </div>
+                            
+                            <!-- Full Width -->
+                            <div class="md:col-span-2 space-y-6">
+                                <!-- Alamat -->
+                                <div>
+                                    <x-input-label for="alamat" :value="__('Alamat Lengkap')" />
+                                    <textarea id="alamat" name="alamat" class="block mt-1 w-full rounded-md shadow-sm border-gray-300 focus:border-emerald-500 focus:ring-emerald-500" rows="3" placeholder="Alamat lengkap kantor atau gudang supplier">{{ old('alamat') }}</textarea>
+                                    <x-input-error :messages="$errors->get('alamat')" class="mt-2" />
+                                </div>
+
+                                <!-- Keterangan -->
+                                <div>
+                                    <x-input-label for="keterangan" :value="__('Keterangan Tambahan')" />
+                                    <textarea id="keterangan" name="keterangan" class="block mt-1 w-full rounded-md shadow-sm border-gray-300 focus:border-emerald-500 focus:ring-emerald-500" rows="2" placeholder="Catatan tambahan mengenai supplier ini (opsional)">{{ old('keterangan') }}</textarea>
+                                    <x-input-error :messages="$errors->get('keterangan')" class="mt-2" />
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Kategori -->
-                        <div>
-                            <x-input-label for="kategori" :value="__('Kategori Supplier')" />
-                            <select id="kategori" name="kategori" class="border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 rounded-md shadow-sm block mt-1 w-full">
-                                <option value="">-- Pilih Kategori --</option>
-                                <option value="Perlengkapan" {{ old('kategori') == 'Perlengkapan' ? 'selected' : '' }}>Perlengkapan (Kain, Batik, dll)</option>
-                                <option value="Koper & Tas" {{ old('kategori') == 'Koper & Tas' ? 'selected' : '' }}>Koper & Tas</option>
-                                <option value="Akomodasi" {{ old('kategori') == 'Akomodasi' ? 'selected' : '' }}>Akomodasi (Hotel)</option>
-                                <option value="Transportasi" {{ old('kategori') == 'Transportasi' ? 'selected' : '' }}>Transportasi (Bus, Pesawat)</option>
-                                <option value="Catering" {{ old('kategori') == 'Catering' ? 'selected' : '' }}>Catering</option>
-                                <option value="Lainnya" {{ old('kategori') == 'Lainnya' ? 'selected' : '' }}>Lainnya</option>
-                            </select>
-                            <x-input-error :messages="$errors->get('kategori')" class="mt-2" />
+                        <div class="flex items-center justify-end mt-8 pt-6 border-t border-gray-100">
+                            <a href="{{ route('supplier.index') }}" class="text-gray-600 hover:text-gray-900 mr-4 text-sm font-medium transition-colors">
+                                {{ __('Batal') }}
+                            </a>
+                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 focus:bg-emerald-700 active:bg-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition ease-in-out duration-150" :disabled="submitting" :class="{ 'opacity-75 cursor-not-allowed': submitting }">
+                                <span x-show="submitting" class="mr-2" style="display: none;">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </span>
+                                <span x-text="submitting ? 'Menyimpan...' : 'Simpan Supplier'">Simpan Supplier</span>
+                            </button>
                         </div>
-
-                        <!-- Kontak -->
-                        <div>
-                            <x-input-label for="kontak" :value="__('No. Telepon / HP')" />
-                            <x-text-input id="kontak" class="block mt-1 w-full" type="text" name="kontak" :value="old('kontak')" />
-                            <x-input-error :messages="$errors->get('kontak')" class="mt-2" />
-                        </div>
-
-                        <!-- Email -->
-                        <div>
-                            <x-input-label for="email" :value="__('Email (Opsional)')" />
-                            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" />
-                            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-                        </div>
-
-                        <!-- Status Aktif -->
-                        <div class="flex items-center mt-4">
-                            <input id="is_active" type="checkbox" name="is_active" value="1" class="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500" {{ old('is_active', true) ? 'checked' : '' }}>
-                            <label for="is_active" class="ml-2 block text-sm text-gray-900">Supplier Aktif</label>
-                        </div>
-
-                        <!-- Alamat -->
-                        <div class="md:col-span-2">
-                            <x-input-label for="alamat" :value="__('Alamat Lengkap')" />
-                            <textarea id="alamat" name="alamat" class="block mt-1 w-full rounded-md shadow-sm border-gray-300 focus:border-emerald-500 focus:ring-emerald-500" rows="3">{{ old('alamat') }}</textarea>
-                            <x-input-error :messages="$errors->get('alamat')" class="mt-2" />
-                        </div>
-
-                        <!-- Keterangan -->
-                        <div class="md:col-span-2">
-                            <x-input-label for="keterangan" :value="__('Keterangan Tambahan')" />
-                            <textarea id="keterangan" name="keterangan" class="block mt-1 w-full rounded-md shadow-sm border-gray-300 focus:border-emerald-500 focus:ring-emerald-500" rows="2">{{ old('keterangan') }}</textarea>
-                            <x-input-error :messages="$errors->get('keterangan')" class="mt-2" />
-                        </div>
-                    </div>
-
-                    <div class="flex items-center justify-end mt-6">
-                        <a href="{{ route('supplier.index') }}" class="text-gray-600 hover:text-gray-900 mr-4">
-                            {{ __('Batal') }}
-                        </a>
-                        <x-primary-button class="ml-4 bg-emerald-600 hover:bg-emerald-700">
-                            {{ __('Simpan Supplier') }}
-                        </x-primary-button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

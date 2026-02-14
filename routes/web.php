@@ -10,6 +10,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\PurchasingController;
 use App\Http\Controllers\PegawaiController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Jamaah;
 use App\Models\Embarkasi;
@@ -33,23 +34,14 @@ Route::get('/test', function () {
 });
 
 Route::get('/', function () {
-    return 'Welcome to Travel Haji - System is Online';
+    return redirect()->route('login');
 });
 
-Route::get('/dashboard', function () {
-    $totalJamaah = Jamaah::count();
-    $activeJamaah = Jamaah::where('status_keberangkatan', 'Belum Berangkat')->count();
-    $upcomingDeparture = Embarkasi::where('status', 'Belum Berangkat')
-                                  ->orderBy('waktu_keberangkatan', 'asc')
-                                  ->first();
-    
-    // Simple Kas Summary
-    $kasMasuk = Kas::where('jenis', 'DEBET')->sum('jumlah');
-    $kasKeluar = Kas::where('jenis', 'KREDIT')->sum('jumlah');
-    $saldo = $kasMasuk - $kasKeluar;
-
-    return view('dashboard', compact('totalJamaah', 'activeJamaah', 'upcomingDeparture', 'saldo'));
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/stats', [DashboardController::class, 'getStats'])->name('dashboard.stats');
+    Route::get('/dashboard/chart', [DashboardController::class, 'getChartData'])->name('dashboard.chart');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -57,6 +49,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Jamaah Routes
+    Route::get('jamaah/export', [JamaahController::class, 'export'])->name('jamaah.export');
     Route::resource('jamaah', JamaahController::class);
 
     // Embarkasi Routes
@@ -69,6 +62,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('embarkasi', EmbarkasiController::class);
 
     // Price List Routes
+    Route::post('price-list/bulk-action', [PriceListController::class, 'bulkAction'])->name('price-list.bulk-action');
+    Route::get('price-list/export', [PriceListController::class, 'export'])->name('price-list.export');
     Route::resource('price-list', PriceListController::class);
 
     // Pegawai Routes
@@ -80,6 +75,8 @@ Route::middleware('auth')->group(function () {
 
     // Finance Routes
     Route::get('finance/report', [FinanceController::class, 'report'])->name('finance.report');
+    Route::get('finance/export/excel', [FinanceController::class, 'exportExcel'])->name('finance.export.excel');
+    Route::get('finance/export/pdf', [FinanceController::class, 'exportPdf'])->name('finance.export.pdf');
     Route::resource('finance', FinanceController::class);
 
     // Purchasing & Inventory Routes
