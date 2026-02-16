@@ -31,27 +31,41 @@ class DatabaseSeeder extends Seeder
         }
 
         // 2. Create Super Admin
-        $admin = Pegawai::create([
-            'nama_pegawai' => 'Administrator',
-            'username' => 'admin',
-            'password' => Hash::make('password'),
-            'jabatan' => 'Super Admin',
-            'status' => 'AKTIF',
-        ]);
+        $admin = Pegawai::firstOrCreate(
+            ['username' => 'admin'],
+            [
+                'nama_pegawai' => 'Administrator',
+                'password' => Hash::make('password'),
+                'jabatan' => 'Super Admin',
+                'status' => 'AKTIF',
+            ]
+        );
 
         // Assign Role
         $adminRole = Role::where('nama_role', 'Super Admin')->first();
-        $admin->roles()->attach($adminRole->id_role);
+        if (!$admin->roles()->where('roles.id_role', $adminRole->id_role)->exists()) {
+            $admin->roles()->attach($adminRole->id_role);
+        }
 
         // 3. Create Demo Pegawai (Marketing)
-        $marketing = Pegawai::create([
-            'nama_pegawai' => 'Budi Marketing',
-            'username' => 'marketing',
-            'password' => Hash::make('password'),
-            'jabatan' => 'Agen Marketing',
-            'status' => 'AKTIF',
-        ]);
+        $marketing = Pegawai::firstOrCreate(
+            ['username' => 'marketing'],
+            [
+                'nama_pegawai' => 'Budi Marketing',
+                'password' => Hash::make('password'),
+                'jabatan' => 'Agen Marketing',
+                'status' => 'AKTIF',
+            ]
+        );
         $marketingRole = Role::where('nama_role', 'Agen Marketing')->first();
-        $marketing->roles()->attach($marketingRole->id_role);
+        if (!$marketing->roles()->where('roles.id_role', $marketingRole->id_role)->exists()) {
+            $marketing->roles()->attach($marketingRole->id_role);
+        }
+
+        // 4. Call other seeders
+        $this->call([
+            KodeAkuntansiSeeder::class,
+            PurchasingSeeder::class,
+        ]);
     }
 }
