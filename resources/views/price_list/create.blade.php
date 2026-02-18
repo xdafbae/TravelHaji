@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">
+        <x-slot name="header">
         <div class="flex items-center">
             <a href="{{ route('price-list.index') }}" class="mr-4 text-gray-400 hover:text-gray-600 transition-colors">
                 <i class="fas fa-arrow-left"></i>
