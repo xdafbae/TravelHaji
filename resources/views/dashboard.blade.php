@@ -1,218 +1,265 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col md:flex-row justify-between items-center">
-            <div>
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                    {{ __('Dashboard Overview') }}
-                </h2>
-                <p class="text-sm text-gray-500 mt-1">Selamat datang kembali, {{ Auth::user()->name }}!</p>
-            </div>
-            <div class="mt-4 md:mt-0 flex items-center space-x-3">
-                <span class="text-sm text-gray-500 bg-white px-3 py-1 rounded-full shadow-sm border border-gray-100">
-                    <i class="fas fa-calendar-alt mr-2 text-indigo-500"></i> {{ now()->format('d M Y') }}
-                </span>
-                <button onclick="refreshDashboard()" class="p-2 bg-white rounded-full text-gray-400 hover:text-indigo-600 shadow-sm border border-gray-100 transition-colors" title="Refresh Data">
-                    <i class="fas fa-sync-alt" id="refresh-icon"></i>
-                </button>
-            </div>
-        </div>
+        <!-- Not used in this theme -->
     </x-slot>
 
-    <div class="py-6 animate-fade-in-up">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="max-w-7xl mx-auto space-y-8">
+         
+        <!-- Welcome Header -->
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <div class="space-y-1">
+                <h2 class="text-3xl font-black text-secondary-900 tracking-tight leading-tight">
+                    Dashboard Overview
+                </h2>
+                <div class="flex items-center text-secondary-500 font-medium">
+                    <span>Selamat datang kembali,</span>
+                    <span class="ml-1 text-secondary-900 font-bold bg-secondary-100 px-2 py-0.5 rounded-lg border border-secondary-200">{{ Auth::user()->name }}</span>
+                    <span class="mx-2 text-secondary-300">|</span>
+                    <span class="text-sm">{{ now()->translatedFormat('l, d F Y') }}</span>
+                </div>
+            </div>
             
-            <!-- Quick Stats Section -->
+            <div class="flex items-center gap-3 w-full lg:w-auto">
+                <div class="hidden md:flex items-center bg-white border border-secondary-200 rounded-xl p-1 shadow-sm">
+                    <span class="px-3 py-1.5 text-xs font-bold text-secondary-600 bg-secondary-50 rounded-lg border border-secondary-100">
+                        <i class="fas fa-clock mr-1.5 text-primary-500"></i> {{ now()->format('H:i') }} WIB
+                    </span>
+                </div>
+                <button onclick="refreshDashboard()" class="group relative flex items-center justify-center p-3 bg-white border border-secondary-200 rounded-xl text-secondary-400 hover:text-primary-600 hover:border-primary-200 hover:shadow-md transition-all duration-300 w-12 h-12" title="Refresh Data">
+                    <i class="fas fa-sync-alt transform group-hover:rotate-180 transition-transform duration-700" id="refresh-icon"></i>
+                </button>
+                <a href="{{ route('jamaah.create') }}" class="flex-1 lg:flex-none inline-flex justify-center items-center px-5 py-3 bg-primary-600 border border-transparent rounded-xl font-bold text-sm text-white hover:bg-primary-700 active:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 group">
+                    <i class="fas fa-plus-circle mr-2 group-hover:scale-110 transition-transform"></i>
+                    Jamaah Baru
+                </a>
+            </div>
+        </div>
+
+        <div class="animate-fade-in-up space-y-8">
+            
+            <!-- Stats Grid -->
             <div id="stats-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <!-- Total Jamaah -->
-                <div class="bg-white overflow-hidden shadow-sm rounded-xl border-l-4 border-emerald-500 hover:shadow-md transition-shadow duration-300">
-                    <div class="p-6">
-                        <div class="flex items-center justify-between">
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-secondary-100 hover:shadow-lg hover:border-primary-100 transition-all duration-300 group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
+                        <i class="fas fa-users text-8xl text-primary-600"></i>
+                    </div>
+                    <div class="relative z-10 flex flex-col h-full justify-between">
+                        <div class="flex items-center gap-4 mb-2">
+                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-50 to-primary-100 text-primary-600 flex items-center justify-center text-xl shadow-inner">
+                                <i class="fas fa-users"></i>
+                            </div>
                             <div>
-                                <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Jamaah</p>
-                                <h3 class="text-2xl font-bold text-gray-800 mt-1" id="stat-total-jamaah">{{ $stats['total_jamaah'] }}</h3>
-                            </div>
-                            <div class="p-3 bg-emerald-100 rounded-full text-emerald-600">
-                                <i class="fas fa-users text-xl"></i>
+                                <p class="text-xs font-bold text-secondary-400 uppercase tracking-wider">Total Jamaah</p>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-xs font-bold text-success-600 bg-success-50 px-1.5 py-0.5 rounded flex items-center">
+                                        <i class="fas fa-arrow-up mr-1 text-[10px]"></i> 12%
+                                    </span>
+                                </div>
                             </div>
                         </div>
-                        <div class="mt-4 flex items-center text-sm">
-                            <span class="text-emerald-500 flex items-center font-medium">
-                                <i class="fas fa-arrow-up mr-1"></i> 12%
-                            </span>
-                            <span class="text-gray-400 ml-2">dari bulan lalu</span>
-                        </div>
+                        <h3 class="text-3xl font-black text-secondary-900 tracking-tight mt-4" id="stat-total-jamaah">{{ number_format($stats['total_jamaah']) }}</h3>
                     </div>
                 </div>
 
                 <!-- Active Jamaah -->
-                <div class="bg-white overflow-hidden shadow-sm rounded-xl border-l-4 border-blue-500 hover:shadow-md transition-shadow duration-300">
-                    <div class="p-6">
-                        <div class="flex items-center justify-between">
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-secondary-100 hover:shadow-lg hover:border-info-100 transition-all duration-300 group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
+                        <i class="fas fa-user-clock text-8xl text-info-600"></i>
+                    </div>
+                    <div class="relative z-10 flex flex-col h-full justify-between">
+                        <div class="flex items-center gap-4 mb-2">
+                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-info-50 to-info-100 text-info-600 flex items-center justify-center text-xl shadow-inner">
+                                <i class="fas fa-user-clock"></i>
+                            </div>
                             <div>
-                                <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Belum Berangkat</p>
-                                <h3 class="text-2xl font-bold text-gray-800 mt-1" id="stat-active-jamaah">{{ $stats['active_jamaah'] }}</h3>
-                            </div>
-                            <div class="p-3 bg-blue-100 rounded-full text-blue-600">
-                                <i class="fas fa-user-clock text-xl"></i>
+                                <p class="text-xs font-bold text-secondary-400 uppercase tracking-wider">Menunggu Jadwal</p>
+                                <p class="text-xs font-medium text-secondary-500 mt-0.5">Siap diberangkatkan</p>
                             </div>
                         </div>
-                        <div class="mt-4 flex items-center text-sm">
-                            <span class="text-gray-500">Menunggu jadwal keberangkatan</span>
-                        </div>
+                        <h3 class="text-3xl font-black text-secondary-900 tracking-tight mt-4" id="stat-active-jamaah">{{ number_format($stats['active_jamaah']) }}</h3>
                     </div>
                 </div>
 
                 <!-- Saldo Kas -->
-                <div class="bg-white overflow-hidden shadow-sm rounded-xl border-l-4 border-yellow-500 hover:shadow-md transition-shadow duration-300">
-                    <div class="p-6">
-                        <div class="flex items-center justify-between">
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-secondary-100 hover:shadow-lg hover:border-warning-100 transition-all duration-300 group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
+                        <i class="fas fa-wallet text-8xl text-warning-600"></i>
+                    </div>
+                    <div class="relative z-10 flex flex-col h-full justify-between">
+                        <div class="flex items-center gap-4 mb-2">
+                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-warning-50 to-warning-100 text-warning-600 flex items-center justify-center text-xl shadow-inner">
+                                <i class="fas fa-wallet"></i>
+                            </div>
                             <div>
-                                <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Saldo Kas</p>
-                                <h3 class="text-2xl font-bold text-gray-800 mt-1" id="stat-saldo">Rp {{ number_format($stats['saldo_kas'], 0, ',', '.') }}</h3>
-                            </div>
-                            <div class="p-3 bg-yellow-100 rounded-full text-yellow-600">
-                                <i class="fas fa-wallet text-xl"></i>
+                                <p class="text-xs font-bold text-secondary-400 uppercase tracking-wider">Saldo Kas</p>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                    <span class="text-xs font-bold {{ $stats['kas_masuk_month'] >= $stats['kas_keluar_month'] ? 'text-success-600 bg-success-50' : 'text-danger-600 bg-danger-50' }} px-1.5 py-0.5 rounded flex items-center">
+                                        {{ $stats['kas_masuk_month'] >= $stats['kas_keluar_month'] ? 'Surplus' : 'Defisit' }}
+                                    </span>
+                                </div>
                             </div>
                         </div>
-                        <div class="mt-4 flex items-center text-sm">
-                            <span class="text-{{ $stats['kas_masuk_month'] >= $stats['kas_keluar_month'] ? 'emerald' : 'red' }}-500 flex items-center font-medium">
-                                <i class="fas fa-exchange-alt mr-1"></i> 
-                                {{ $stats['kas_masuk_month'] >= $stats['kas_keluar_month'] ? 'Surplus' : 'Defisit' }}
-                            </span>
-                            <span class="text-gray-400 ml-2">bulan ini</span>
-                        </div>
+                        <h3 class="text-2xl font-black text-secondary-900 tracking-tight mt-4 truncate" id="stat-saldo">Rp {{ number_format($stats['saldo_kas'], 0, ',', '.') }}</h3>
                     </div>
                 </div>
 
-                <!-- Next Departure / Passport Info -->
-                <div class="bg-white overflow-hidden shadow-sm rounded-xl border-l-4 border-purple-500 hover:shadow-md transition-shadow duration-300">
-                    <div class="p-6">
-                        <div class="flex items-center justify-between">
+                <!-- Next Departure -->
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-secondary-100 hover:shadow-lg hover:border-purple-100 transition-all duration-300 group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500">
+                        <i class="fas fa-plane-departure text-8xl text-purple-600"></i>
+                    </div>
+                    <div class="relative z-10 flex flex-col h-full justify-between">
+                        <div class="flex items-center gap-4 mb-2">
+                            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 text-purple-600 flex items-center justify-center text-xl shadow-inner">
+                                <i class="fas fa-plane-departure"></i>
+                            </div>
                             <div>
-                                <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Keberangkatan</p>
-                                <h3 class="text-lg font-bold text-gray-800 mt-1">
-                                    {{ $upcomingDeparture ? $upcomingDeparture->waktu_keberangkatan->format('d M Y') : 'Belum ada jadwal' }}
-                                </h3>
-                            </div>
-                            <div class="p-3 bg-purple-100 rounded-full text-purple-600">
-                                <i class="fas fa-plane-departure text-xl"></i>
+                                <p class="text-xs font-bold text-secondary-400 uppercase tracking-wider">Next Departure</p>
+                                @if($upcomingDeparture)
+                                    <span class="text-xs font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded mt-0.5 inline-block">
+                                        {{ $upcomingDeparture->kota_keberangkatan }}
+                                    </span>
+                                @endif
                             </div>
                         </div>
-                        <div class="mt-4 flex items-center text-sm">
-                            @if($upcomingDeparture)
-                                <span class="text-purple-600 bg-purple-50 px-2 py-0.5 rounded text-xs font-semibold">
-                                    {{ $upcomingDeparture->kota_keberangkatan }}
-                                </span>
-                            @else
-                                <span class="text-gray-400">Siap menjadwalkan?</span>
-                            @endif
-                        </div>
+                        <h3 class="text-xl font-black text-secondary-900 tracking-tight mt-4 leading-tight">
+                            {{ $upcomingDeparture ? $upcomingDeparture->waktu_keberangkatan->format('d M Y') : 'Belum ada jadwal' }}
+                        </h3>
                     </div>
                 </div>
             </div>
 
-            <!-- Main Content Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Left Column: Charts & Performance -->
-                <div class="lg:col-span-2 space-y-6">
+            <!-- Content Grid -->
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                <!-- Left: Analytics & Quick Actions -->
+                <div class="xl:col-span-2 space-y-8">
                     <!-- Analytics Chart -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-bold text-gray-800">Analisis Pertumbuhan</h3>
-                            <select id="chart-filter" onchange="loadChartData()" class="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                                <option value="month">Tahun Ini (Bulanan)</option>
-                                <option value="year">5 Tahun Terakhir</option>
+                    <div class="bg-white rounded-3xl shadow-sm border border-secondary-100 p-6 lg:p-8">
+                        <div class="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-secondary-900 flex items-center gap-2">
+                                    <span class="w-2 h-6 bg-primary-500 rounded-full"></span>
+                                    Analisis Pertumbuhan
+                                </h3>
+                                <p class="text-sm text-secondary-500 ml-4 mt-1">Tren pendaftaran jamaah dan pendapatan</p>
+                            </div>
+                            <div class="flex bg-secondary-50 p-1 rounded-xl border border-secondary-100">
+                                <button onclick="updateChartFilter('month')" id="btn-month" class="px-4 py-2 rounded-lg text-xs font-bold transition-all bg-white text-secondary-900 shadow-sm">Bulan Ini</button>
+                                <button onclick="updateChartFilter('year')" id="btn-year" class="px-4 py-2 rounded-lg text-xs font-bold transition-all text-secondary-500 hover:text-secondary-700">Tahun Ini</button>
+                            </div>
+                            <select id="chart-filter" onchange="loadChartData()" class="hidden">
+                                <option value="month">Month</option>
+                                <option value="year">Year</option>
                             </select>
                         </div>
-                        <div class="relative h-72 w-full">
+                        <div class="relative h-[350px] w-full">
                             <canvas id="mainChart"></canvas>
                         </div>
                     </div>
 
-                    <!-- Quick Actions Grid -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h3 class="text-lg font-bold text-gray-800 mb-4">Menu Akses Cepat</h3>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <a href="{{ route('jamaah.create') }}" class="flex flex-col items-center justify-center p-4 rounded-xl border border-gray-100 bg-gray-50 hover:bg-emerald-50 hover:border-emerald-200 hover:shadow-sm transition-all group">
-                                <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 transition-transform">
-                                    <i class="fas fa-user-plus text-emerald-500 text-xl"></i>
-                                </div>
-                                <span class="text-sm font-medium text-gray-700 group-hover:text-emerald-700">Daftar Jamaah</span>
-                            </a>
-                            
-                            <a href="{{ route('finance.create') }}" class="flex flex-col items-center justify-center p-4 rounded-xl border border-gray-100 bg-gray-50 hover:bg-blue-50 hover:border-blue-200 hover:shadow-sm transition-all group">
-                                <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 transition-transform">
-                                    <i class="fas fa-cash-register text-blue-500 text-xl"></i>
-                                </div>
-                                <span class="text-sm font-medium text-gray-700 group-hover:text-blue-700">Catat Transaksi</span>
-                            </a>
+                    <!-- Quick Actions -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <a href="{{ route('jamaah.index') }}" class="group flex flex-col items-center justify-center p-6 rounded-3xl bg-white border border-secondary-100 shadow-sm hover:shadow-md hover:border-primary-200 transition-all duration-300">
+                            <div class="w-14 h-14 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 group-hover:bg-primary-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <span class="font-bold text-secondary-700 group-hover:text-primary-700 transition-colors">Data Jamaah</span>
+                            <span class="text-xs text-secondary-400 mt-1">Kelola database</span>
+                        </a>
+                        
+                        <a href="{{ route('finance.index') }}" class="group flex flex-col items-center justify-center p-6 rounded-3xl bg-white border border-secondary-100 shadow-sm hover:shadow-md hover:border-success-200 transition-all duration-300">
+                            <div class="w-14 h-14 rounded-2xl bg-success-50 text-success-600 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 group-hover:bg-success-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                                <i class="fas fa-cash-register"></i>
+                            </div>
+                            <span class="font-bold text-secondary-700 group-hover:text-success-700 transition-colors">Keuangan</span>
+                            <span class="text-xs text-secondary-400 mt-1">Catat transaksi</span>
+                        </a>
 
-                            <a href="{{ route('embarkasi.create') }}" class="flex flex-col items-center justify-center p-4 rounded-xl border border-gray-100 bg-gray-50 hover:bg-purple-50 hover:border-purple-200 hover:shadow-sm transition-all group">
-                                <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 transition-transform">
-                                    <i class="fas fa-plane text-purple-500 text-xl"></i>
-                                </div>
-                                <span class="text-sm font-medium text-gray-700 group-hover:text-purple-700">Jadwal Baru</span>
-                            </a>
+                        <a href="{{ route('embarkasi.index') }}" class="group flex flex-col items-center justify-center p-6 rounded-3xl bg-white border border-secondary-100 shadow-sm hover:shadow-md hover:border-info-200 transition-all duration-300">
+                            <div class="w-14 h-14 rounded-2xl bg-info-50 text-info-600 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 group-hover:bg-info-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                                <i class="fas fa-plane"></i>
+                            </div>
+                            <span class="font-bold text-secondary-700 group-hover:text-info-700 transition-colors">Jadwal</span>
+                            <span class="text-xs text-secondary-400 mt-1">Atur keberangkatan</span>
+                        </a>
 
-                            <a href="{{ route('finance.report') }}" class="flex flex-col items-center justify-center p-4 rounded-xl border border-gray-100 bg-gray-50 hover:bg-yellow-50 hover:border-yellow-200 hover:shadow-sm transition-all group">
-                                <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 transition-transform">
-                                    <i class="fas fa-file-alt text-yellow-500 text-xl"></i>
-                                </div>
-                                <span class="text-sm font-medium text-gray-700 group-hover:text-yellow-700">Laporan</span>
-                            </a>
-                        </div>
+                        <a href="{{ route('inventory.index') }}" class="group flex flex-col items-center justify-center p-6 rounded-3xl bg-white border border-secondary-100 shadow-sm hover:shadow-md hover:border-warning-200 transition-all duration-300">
+                            <div class="w-14 h-14 rounded-2xl bg-warning-50 text-warning-600 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 group-hover:bg-warning-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                                <i class="fas fa-boxes"></i>
+                            </div>
+                            <span class="font-bold text-secondary-700 group-hover:text-warning-700 transition-colors">Logistik</span>
+                            <span class="text-xs text-secondary-400 mt-1">Stok barang</span>
+                        </a>
                     </div>
                 </div>
 
-                <!-- Right Column: Recent Activity & Notifications -->
-                <div class="space-y-6">
-                    <!-- Notifications / Important Info -->
+                <!-- Right: Notifications & Activity -->
+                <div class="space-y-8">
+                    <!-- Alert Card -->
                     @if($stats['passport_pending'] > 0)
-                    <div class="bg-gradient-to-br from-orange-50 to-white rounded-xl shadow-sm border border-orange-100 p-5">
-                        <div class="flex items-start">
-                            <div class="flex-shrink-0">
-                                <i class="fas fa-exclamation-circle text-orange-500 text-xl mt-1"></i>
+                    <div class="bg-gradient-to-br from-warning-50 to-white rounded-3xl shadow-sm border border-warning-100 p-6 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-warning-100 rounded-full -mr-12 -mt-12 opacity-50 blur-2xl"></div>
+                        <div class="flex gap-4 relative z-10">
+                            <div class="w-12 h-12 rounded-2xl bg-warning-100 text-warning-600 flex items-center justify-center text-xl flex-shrink-0 shadow-sm">
+                                <i class="fas fa-passport"></i>
                             </div>
-                            <div class="ml-3 w-full">
-                                <h3 class="text-sm font-bold text-orange-800">Perhatian Diperlukan</h3>
-                                <div class="mt-2 text-sm text-orange-700">
-                                    <p>Terdapat <span class="font-bold">{{ $stats['passport_pending'] }}</span> paspor jamaah yang masih berstatus Pending.</p>
-                                </div>
-                                <div class="mt-3">
-                                    <a href="{{ route('passport.index', ['status' => 'Pending']) }}" class="text-sm font-medium text-orange-600 hover:text-orange-500 hover:underline">
-                                        Lihat Data Paspor <i class="fas fa-arrow-right ml-1"></i>
-                                    </a>
-                                </div>
+                            <div>
+                                <h4 class="font-bold text-secondary-900 text-lg">Perhatian Diperlukan</h4>
+                                <p class="text-sm text-secondary-600 mt-1 leading-relaxed">
+                                    Terdapat <span class="font-bold text-warning-700">{{ $stats['passport_pending'] }} paspor jamaah</span> yang membutuhkan verifikasi atau tindak lanjut.
+                                </p>
+                                <a href="{{ route('passport.index', ['status' => 'Pending']) }}" class="inline-flex items-center mt-3 text-sm font-bold text-warning-700 hover:text-warning-800 transition-colors">
+                                    Proses Sekarang <i class="fas fa-arrow-right ml-2 text-xs"></i>
+                                </a>
                             </div>
                         </div>
                     </div>
                     @endif
 
-                    <!-- Recent Activity Feed -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col h-full max-h-[500px]">
-                        <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
-                            <h3 class="font-bold text-gray-800">Aktivitas Terbaru</h3>
-                            <span class="text-xs text-gray-500 bg-white px-2 py-1 rounded border">Real-time</span>
+                    <!-- Activity Feed -->
+                    <div class="bg-white rounded-3xl shadow-sm border border-secondary-100 flex flex-col h-[500px]">
+                        <div class="p-6 border-b border-secondary-100 flex justify-between items-center bg-secondary-50/30 rounded-t-3xl backdrop-blur-sm">
+                            <h3 class="font-bold text-secondary-900 flex items-center gap-2">
+                                <i class="fas fa-history text-secondary-400"></i> Aktivitas Terbaru
+                            </h3>
+                            <div class="flex items-center gap-2">
+                                <span class="relative flex h-2.5 w-2.5">
+                                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-success-400 opacity-75"></span>
+                                  <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-success-500"></span>
+                                </span>
+                                <span class="text-xs font-bold text-secondary-500">Live</span>
+                            </div>
                         </div>
-                        <div class="p-5 overflow-y-auto flex-1 custom-scrollbar" id="activity-feed">
-                            <ul class="space-y-5">
+                        <div class="p-0 overflow-y-auto flex-1 custom-scrollbar relative">
+                            <div class="absolute left-8 top-6 bottom-6 w-0.5 bg-secondary-100"></div>
+                            <ul class="relative py-6 pr-6 pl-2 space-y-6">
                                 @forelse($recentActivities as $activity)
-                                <li class="relative pl-6 border-l-2 border-gray-200 hover:border-indigo-300 transition-colors">
-                                    <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-{{ $activity['color'] }}-100 border-2 border-{{ $activity['color'] }}-500 flex items-center justify-center">
+                                <li class="relative pl-10 group cursor-default">
+                                    <div class="absolute left-[21px] top-1.5 w-3 h-3 rounded-full bg-white border-2 border-{{ $activity['color'] }}-500 z-10 group-hover:scale-125 group-hover:bg-{{ $activity['color'] }}-50 transition-all duration-300"></div>
+                                    <div class="bg-white p-4 rounded-2xl border border-secondary-100 shadow-sm group-hover:shadow-md group-hover:border-{{ $activity['color'] }}-200 transition-all duration-300 ml-2 relative">
+                                        <div class="absolute left-[-6px] top-4 w-3 h-3 bg-white border-l border-t border-secondary-100 transform -rotate-45 group-hover:border-{{ $activity['color'] }}-200 transition-colors"></div>
+                                        <div class="flex justify-between items-start mb-1">
+                                            <span class="text-[10px] font-bold uppercase tracking-wider text-{{ $activity['color'] }}-600 bg-{{ $activity['color'] }}-50 px-2 py-0.5 rounded-lg">{{ $activity['title'] }}</span>
+                                            <span class="text-[10px] font-bold text-secondary-400">{{ $activity['time'] }}</span>
+                                        </div>
+                                        <p class="text-sm text-secondary-700 font-medium leading-relaxed">{{ $activity['description'] }}</p>
                                     </div>
-                                    <div class="mb-1 flex justify-between items-start">
-                                        <span class="text-xs font-bold text-{{ $activity['color'] }}-600 bg-{{ $activity['color'] }}-50 px-2 py-0.5 rounded">{{ $activity['title'] }}</span>
-                                        <span class="text-xs text-gray-400">{{ $activity['time'] }}</span>
-                                    </div>
-                                    <p class="text-sm text-gray-700 font-medium">{{ $activity['description'] }}</p>
                                 </li>
                                 @empty
-                                <li class="text-center text-gray-500 py-4">Belum ada aktivitas tercatat.</li>
+                                <li class="text-center py-12">
+                                    <div class="w-16 h-16 bg-secondary-50 rounded-full flex items-center justify-center mx-auto mb-3 text-secondary-300">
+                                        <i class="fas fa-stream text-2xl"></i>
+                                    </div>
+                                    <p class="text-secondary-400 font-medium text-sm">Belum ada aktivitas tercatat hari ini.</p>
+                                </li>
                                 @endforelse
                             </ul>
                         </div>
-                        <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl text-center">
-                            <a href="#" class="text-xs font-medium text-indigo-600 hover:text-indigo-800">Lihat Semua Aktivitas</a>
+                        <div class="p-4 border-t border-secondary-100 bg-secondary-50/30 rounded-b-3xl text-center">
+                            <a href="#" class="text-xs font-bold text-primary-600 hover:text-primary-700 uppercase tracking-wider flex items-center justify-center gap-2 group">
+                                Lihat Semua Log <i class="fas fa-chevron-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -220,108 +267,103 @@
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Chart.js & Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+    
     <style>
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #d1d5db;
-            border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #9ca3af;
-        }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
         @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translate3d(0, 20px, 0);
-            }
-            to {
-                opacity: 1;
-                transform: translate3d(0, 0, 0);
-            }
+            from { opacity: 0; transform: translate3d(0, 20px, 0); }
+            to { opacity: 1; transform: translate3d(0, 0, 0); }
         }
-        .animate-fade-in-up {
-            animation: fadeInUp 0.5s ease-out;
-        }
+        .animate-fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
     </style>
 
     <script>
-        // --- Drag and Drop Initialization ---
+        // --- UI Interactions ---
+        function updateChartFilter(type) {
+            document.getElementById('chart-filter').value = type;
+            loadChartData();
+            
+            // Toggle active styles
+            const btnMonth = document.getElementById('btn-month');
+            const btnYear = document.getElementById('btn-year');
+            
+            if(type === 'month') {
+                btnMonth.className = 'px-4 py-2 rounded-lg text-xs font-bold transition-all bg-white text-secondary-900 shadow-sm';
+                btnYear.className = 'px-4 py-2 rounded-lg text-xs font-bold transition-all text-secondary-500 hover:text-secondary-700';
+            } else {
+                btnYear.className = 'px-4 py-2 rounded-lg text-xs font-bold transition-all bg-white text-secondary-900 shadow-sm';
+                btnMonth.className = 'px-4 py-2 rounded-lg text-xs font-bold transition-all text-secondary-500 hover:text-secondary-700';
+            }
+        }
+
+        // --- Drag and Drop ---
         document.addEventListener('DOMContentLoaded', function() {
-            // Make stats grid sortable
             new Sortable(document.getElementById('stats-container'), {
-                animation: 150,
-                ghostClass: 'bg-indigo-50',
-                handle: '.bg-white', // Drag by the card itself
-                delay: 200, // Slight delay to prevent accidental drags on touch
+                animation: 200,
+                ghostClass: 'opacity-50',
+                delay: 150,
                 delayOnTouchOnly: true
             });
 
-            // Initialize Charts
             initChart();
-            
-            // Auto refresh stats every 30 seconds
             setInterval(fetchRealTimeStats, 30000);
         });
 
-        // --- Chart.js Logic ---
+        // --- Chart Logic ---
         let mainChart;
         function initChart() {
             const ctx = document.getElementById('mainChart').getContext('2d');
             
-            // Initial Empty Chart
+            Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+            Chart.defaults.color = '#64748b';
+            
+            // Create Gradient
+            let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(16, 185, 129, 0.2)'); // success-500
+            gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+
             mainChart = new Chart(ctx, {
                 type: 'line',
-                data: {
-                    labels: [],
-                    datasets: []
-                },
+                data: { labels: [], datasets: [] },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    },
+                    interaction: { mode: 'index', intersect: false },
                     plugins: {
-                        legend: {
-                            position: 'top',
-                        },
+                        legend: { display: false },
                         tooltip: {
-                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                            titleColor: '#1f2937',
-                            bodyColor: '#4b5563',
-                            borderColor: '#e5e7eb',
-                            borderWidth: 1,
-                            padding: 10,
-                            displayColors: true
+                            backgroundColor: '#1e293b',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#cbd5e1',
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: false,
                         }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
-                            grid: {
-                                borderDash: [2, 4],
-                                color: '#f3f4f6'
-                            }
+                            grid: { borderDash: [4, 4], color: '#f1f5f9', drawBorder: false },
+                            ticks: { font: { size: 11, weight: '600' }, padding: 10 }
                         },
                         x: {
-                            grid: {
-                                display: false
-                            }
+                            grid: { display: false, drawBorder: false },
+                            ticks: { font: { size: 11, weight: '600' }, padding: 10 }
                         }
+                    },
+                    elements: {
+                        line: { tension: 0.4, borderWidth: 3 },
+                        point: { radius: 0, hoverRadius: 6, borderWidth: 3, backgroundColor: '#ffffff' }
                     }
                 }
             });
 
-            // Load Initial Data
             loadChartData();
         }
 
@@ -331,40 +373,33 @@
             fetch(`{{ route('dashboard.chart') }}?range=${range}`)
                 .then(response => response.json())
                 .then(data => {
-                    // Decide what to show based on requirements. 
-                    // Let's mix Jamaah and Finance or create a dual axis chart.
-                    // For simplicity, let's show Jamaah Growth + Income for now
-                    // Or user can toggle. Let's merge datasets for the 'Overview'.
-                    
-                    // We'll update the chart with the fetched data
-                    // Note: In real app, might want separate charts or toggle buttons.
-                    // Here we combine them for "System Overview".
-                    
+                    const ctx = document.getElementById('mainChart').getContext('2d');
+                    let gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                    gradient.addColorStop(0, 'rgba(16, 185, 129, 0.15)'); 
+                    gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+
+                    const dataset = data.jamaah.datasets[0];
+                    dataset.borderColor = '#10b981'; // success-500
+                    dataset.backgroundColor = gradient;
+                    dataset.pointBackgroundColor = '#ffffff';
+                    dataset.pointBorderColor = '#10b981';
+                    dataset.fill = true;
+
                     mainChart.data.labels = data.jamaah.labels;
-                    mainChart.data.datasets = [
-                        data.jamaah.datasets[0], // Jamaah
-                        // Normalize Finance Data (Divide by 1000 or 1M) for visualization if scale differs too much
-                        // For now, let's just show Jamaah data on this chart to be safe on scale
-                        // Or we can use a second axis.
-                    ];
-                    
-                    // Add Finance dataset if scale allows, or maybe separate chart is better.
-                    // Let's stick to Jamaah trends for the main chart as per previous dashboard, 
-                    // but enhanced.
-                    
+                    mainChart.data.datasets = [dataset];
                     mainChart.update();
                 })
-                .catch(error => console.error('Error loading chart:', error));
+                .catch(error => console.error('Chart Error:', error));
         }
 
-        // --- Real-time Stats Logic ---
+        // --- Real-time Stats ---
         function refreshDashboard() {
             const icon = document.getElementById('refresh-icon');
-            icon.classList.add('fa-spin');
+            icon.classList.add('animate-spin');
             
             Promise.all([fetchRealTimeStats(), loadChartData()])
                 .finally(() => {
-                    setTimeout(() => icon.classList.remove('fa-spin'), 500);
+                    setTimeout(() => icon.classList.remove('animate-spin'), 800);
                 });
         }
 
@@ -373,16 +408,12 @@
                 .then(response => response.json())
                 .then(data => {
                     const stats = data.stats;
+                    animateValue("stat-total-jamaah", parseInt(document.getElementById("stat-total-jamaah").innerText.replace(/,/g, '')), stats.total_jamaah, 1000);
+                    animateValue("stat-active-jamaah", parseInt(document.getElementById("stat-active-jamaah").innerText.replace(/,/g, '')), stats.active_jamaah, 1000);
                     
-                    // Animate Value Function
-                    animateValue("stat-total-jamaah", parseInt(document.getElementById("stat-total-jamaah").innerText), stats.total_jamaah, 1000);
-                    animateValue("stat-active-jamaah", parseInt(document.getElementById("stat-active-jamaah").innerText), stats.active_jamaah, 1000);
-                    
-                    // Format Currency
                     const formattedSaldo = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(stats.saldo_kas);
                     document.getElementById("stat-saldo").innerText = formattedSaldo.replace('Rp', 'Rp ');
-                })
-                .catch(error => console.error('Error fetching stats:', error));
+                });
         }
 
         function animateValue(id, start, end, duration) {
@@ -392,19 +423,12 @@
             const increment = end > start ? 1 : -1;
             const stepTime = Math.abs(Math.floor(duration / range));
             const obj = document.getElementById(id);
+            
             const timer = setInterval(function() {
                 current += increment;
-                obj.innerHTML = current;
-                if (current == end) {
-                    clearInterval(timer);
-                }
-            }, stepTime > 0 ? stepTime : 10); // min 10ms
-            
-            // If range is huge, just set it immediately to avoid freezing
-            if(Math.abs(range) > 100) {
-                clearInterval(timer);
-                obj.innerHTML = end;
-            }
+                obj.innerHTML = new Intl.NumberFormat('id-ID').format(current);
+                if (current == end) clearInterval(timer);
+            }, stepTime > 0 ? stepTime : 10);
         }
     </script>
 </x-app-layout>
